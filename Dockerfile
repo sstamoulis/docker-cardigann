@@ -20,7 +20,8 @@ RUN \
 # download and build cardigann
  git clone https://github.com/cardigann/cardigann.git $CARDIGANN_DIR && \
  git -C $CARDIGANN_DIR checkout $(git -C $CARDIGANN_DIR describe --tags --candidates=1 --abbrev=0) && \
- make --directory=$CARDIGANN_DIR install && \
+ make --debug --directory=$CARDIGANN_DIR install && \
+ mv $GOPATH/bin/cardigann /usr/bin/cardigann && \
 # cleanup
  apk del --purge \
 	build-dependencies && \
