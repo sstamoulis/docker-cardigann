@@ -1,61 +1,34 @@
 FROM lsiobase/alpine
-MAINTAINER Gonzalo Peci <davyjones@linuxserver.io>, sparklyballs
 
-# environment variables
-ENV PYTHON_EGG_CACHE="/config/plugins/.python-eggs"
-
-# set version label
-ARG BUILD_DATE
-ARG VERSION
-LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+# Environment variables
+ENV GOPATH=/tmp/golang
+ENV CARDIGANN_DIR=$GOPATH/src/github.com/cardigann/cardigann
+ENV CONFIG_DIR=/config
 
 # install runtime packages
 RUN \
  apk add --no-cache \
-	p7zip \
-	python \
-	unrar \
-	unzip && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/main \
-	libressl2.4-libssl && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
-	deluge && \
+	ca-certificates
 
 # install build packages
+RUN \
  apk add --no-cache --virtual=build-dependencies \
-	g++ \
-	gcc \
-	libffi-dev \
-	py-pip \
-	python-dev && \
+	go \
+	git \
+	make && \
 
- apk add --no-cache --virtual=build-dependencies2 \
-	--repository http://nl.alpinelinux.org/alpine/edge/main \
-	libressl-dev && \
-
-# install pip packages
- pip install --no-cache-dir -U \
-	crypto \
-	mako \
-	markupsafe \
-	pyopenssl \
-	service_identity \
-	six \
-	twisted \
-	zope.interface && \
-
+# download and build cardigann
+ git clone https://github.com/cardigann/cardigann.git $CARDIGANN_DIR && \
+ git -C $CARDIGANN_DIR checkout $(git -C $CARDIGANN_DIR describe --tags --candidates=1 --abbrev=0) && \
+ make --directory=$CARDIGANN_DIR install && \
 # cleanup
  apk del --purge \
-	build-dependencies \
-	build-dependencies2 && \
- rm -rf \
-	/root/.cache
+	build-dependencies && \
+ rm -rf /tmp/*
 
 # add local files
 COPY root/ /
 
 # ports and volumes
-EXPOSE 8112 58846 58946 58946/udp
-VOLUME /config /downloads
+EXPOSE 5060
+VOLUME /config
